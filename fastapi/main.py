@@ -3,7 +3,7 @@ from typing import Union
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
+from pydantic import BaseModel, Field
 
 app = FastAPI();
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -29,6 +29,28 @@ users = [
         "age": 35
     }
 ]
+
+
+def must_be_alpha(value: str) -> str:
+    if not value.isalpha():
+        raise ValueError('Name must contain only alphabets')
+    return value
+
+
+class User(BaseModel):
+    name: str = Field(..., min_length=3, max_length=50)
+    age: int = Field(...,gt=10,lt=70,description="age must be between 10 to 70 year.")
+    email: str 
+    password: str = Field(...,min_length=8, max_length=20, description="password must be between 8 to 20 characters.")
+
+    
+@app.post("/create_user/")
+async def create_user_pydentic(user: User):
+    return {
+        "message": f"User {user.name} created successfully.",
+        # exclude password from response
+        "user_data": user.model_dump_json(exclude={"password"})
+    }
 
 @app.get('/')
 def say_hello():
