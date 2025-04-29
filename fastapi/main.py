@@ -1,9 +1,13 @@
 
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 
 app = FastAPI();
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 users = [
     {
@@ -31,9 +35,21 @@ def say_hello():
     return {"message": "Hello World!"}
 
 
-@app.get('/users')
-def get_users():
-    return {"users": users}
+@app.get("/users")
+async def list_users(request: Request):
+    users = [
+        {"name": "Alice", "age": 30},
+        {"name": "Bob", "age": 25},
+    ]
+    return templates.TemplateResponse(
+        "users/user.html",
+        {"request": request, "users": users}
+    )
+
+
+# @app.get('/users')
+# def get_users():
+#     return {"users": users}
 
 @app.get('/users/{user_id}')
 def get_user(user_id: int):
